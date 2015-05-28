@@ -5,6 +5,7 @@
 
 #include <SDL_net.h>
 
+//Implémentation du métabot
 extern char t_nodes[][6];
 extern char t_moves[][5];
 extern char t_sys[][6];
