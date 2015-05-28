@@ -5,7 +5,7 @@ controller: main.o controller.o
 
 main.o: main.c
 	gcc -std=c99 -I/usr/include/SDL -g -Wall -Werror -c main.c
-controller.o: controller.o
+controller.o: controller.c
 	gcc -std=c99 -I/usr/include/SDL -O2 -g -Wall -Werror -c controller.c
 
 clean:

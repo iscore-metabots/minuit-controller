@@ -9,16 +9,25 @@
 
 int main(int argc, char **argv)
 {
-    UDPsocket sd;       /* Socket descriptor */
+	UDPsocket sd;       /* Socket descriptor */
     UDPpacket *p;       /* Pointer to packet memory */
-    int quit;
 
+	//Initialisation des nodes et de leurs attributs
+	//Plus tard, ces données seront modifiables via un fichier ou un menu
+	char t_moves[][10] = {"h", "dx", "dy", "turn"};
+	char t_sys[][10] = {"start", "stop"};
+	char t_modes[][10] = {"alt", "crab", "backleg", "back", "freq", "gait"};
+	Metabot m = new_metabot((char **)t_moves, (char **)t_sys, (char **)t_modes);
 
+	//if(DEBUG_MODE)
+		//display_metabot(m);
 
-    int fd = open("/dev/rfcomm0", O_RDWR);
-    if(write(fd, "start\n", strlen("start\n"))==-1)
-    	printf("Couldn't write \"start\"\n");
-
+    int fd = 0;
+    if(!DEBUG_MODE){
+    	fd = open("/dev/rfcomm0", O_RDWR);
+    	if(write(fd, "start\n", strlen("start\n"))==-1)
+    		printf("Couldn't write \"start\"\n");
+    }
 
     /* Initialize SDL_net */
     if (SDLNet_Init() < 0)
@@ -42,7 +51,7 @@ int main(int argc, char **argv)
     }
 
     /* Main loop */
-    quit = 0;
+    int quit = 0;
     while (!quit)
     {
         /* Wait a packet. UDP_Recv returns != 0 if a packet is coming */
@@ -78,11 +87,13 @@ int main(int argc, char **argv)
                             {
                                 i++;
                             }
+                            Node n;
                             //copie de la commande
                             name = strncpy(name, (char *)p->data+1, i);
                             for(int x = 0 ; x < NB_NODES ; x++)
                             {
-                                if(strcmp(name, t_nodes[x]))
+                            	n=m[x];
+                                if(cmp_name_node(name, n))
                                 {
                                     answer_namespace_node(x,9998);
                                 }
@@ -94,12 +105,14 @@ int main(int argc, char **argv)
         }
     }
     /* Clean and exit */
+    free_metabot(m);
     SDLNet_FreePacket(p);
     SDLNet_Quit();
-
-    if(write(fd, "stop\n", strlen("stop\n")) == -1)
-    	printf("Couldn't write \"stop\"\n");
-    close(fd);
+    if(!DEBUG_MODE){
+    	if(write(fd, "stop\n", strlen("stop\n")) == -1)
+    		printf("Couldn't write \"stop\"\n");
+    	close(fd);
+    }
 
 
     return EXIT_SUCCESS;
