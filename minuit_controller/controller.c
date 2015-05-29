@@ -6,66 +6,6 @@
 #include <unistd.h>
 #include "controller.h"
 
-struct node{
-	char * name;
-	char * description;
-	char * * attributes;
-};
-
-Node new_node(char * name, char * description, char ** attributes){
-	Node n = malloc(sizeof(struct node));
-	n->name = malloc(strlen(name)+1);
-	strcpy(n->name, name);
-	n->description = malloc(strlen(description)+1);
-	strcpy(n->description, description);
-	n->attributes = malloc(sizeof(attributes));
-/*
-	for(int i = 0 ; i < sizeof(attributes) ; i++){
-		n->attributes[i] = malloc(sizeof(strlen(attributes[i])));
-		strcpy(n->attributes[i], attributes[i]);
-	}*/
-	return n;
-
-}
-
-Metabot new_metabot(char ** t_moves, char ** t_sys, char ** t_modes){
-	Metabot m = malloc(NB_NODES*sizeof(Node));
-	m[0]=new_node("moves", "Fonctions de mouvement", t_moves);
-	m[1]=new_node("sys", "Fonctions système", t_sys);
-	m[2]=new_node("modes", "Fonctions modes", t_modes);
-	return m;
-}
-
-void free_node(Node n){
-	free(n->name);
-	free(n->description);
-	/*
-	for(int i = 0 ; i < sizeof(n->attributes) ; i++){
-		free(n->attributes[i]);
-	}
-	free(n->attributes);*/
-}
-
-void free_metabot(Metabot m){
-	for(int i = 0; i < NB_NODES ; i++)
-		free_node(m[i]);
-	free(m);
-}
-
-void display_node(Node n){
-	printf("%s : { ", n->name);
-	for(int j = 0 ; j < sizeof(n->attributes) ; j++){
-		printf("%s " , n->attributes[j]);
-	}
-	printf("}\n");
-}
-
-void display_metabot(Metabot m){
-	printf("Metabot :\n");
-	for(int i = 0 ; i < NB_NODES ; i++){
-		display_node(m[i]);
-	}
-}
 
 
 int size_bytes(char * s)
@@ -74,10 +14,6 @@ int size_bytes(char * s)
         return strlen(s);
     else
         return  strlen(s) + 4 - strlen(s)%4;
-}
-
-bool cmp_name_node(char * name, Node n){
-	return strcmp(name, n->name);
 }
 
 int write_data(UDPpacket *p, char * s, int it)
@@ -197,7 +133,7 @@ void send_answer(char ** cmd, int port)
 
 void answer_namespace(int port)
 {
-    char * cmd[] = { "Metabot" , "namespace" , ",s" , "/", "nodes={" , "moves", "sys", "modes", "}" };
+    char * cmd[] = { "Metabot:namespace" , ",s" , "/", "nodes={" , "moves", "sys", "modes", "}" };
     send_answer(cmd, port);
 }
 
