@@ -22,6 +22,14 @@ struct node{
 	int size;
 };
 
+/**
+ * \brief Initialise une node
+ * \param name Nom de la node
+ * \param description Description de la node
+ * \param attributes Tableau de chaines de caractères contenant les attributs de la node
+ * \param size Taille du tableau attributes
+ * \return Node initalisée
+ */
 Node new_node(char * name, char * description, char attributes[][10], int size){
 	Node n = malloc(sizeof(struct node));
 	n->name = malloc(strlen(name)+1);
@@ -47,6 +55,10 @@ Metabot new_metabot(){
 	return m;
 }
 
+/**
+ * \brief Libère une node
+ * \param n Node
+ */
 void free_node(Node n){
 	free(n->name);
 	free(n->description);
