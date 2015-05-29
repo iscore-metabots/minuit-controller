@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
-
+/**
+ * \brief Renvoie le plus petit nombre n d'octets supérieur à la taille de s tel que n soit un multiple de 4.
+ * \param s chaine à analyser
+ * \return nombre d'octets multiple de 4
+ */
 int size_bytes(char * s)
 {
     if(strlen(s)%4 == 0)
@@ -15,6 +17,15 @@ int size_bytes(char * s)
         return  strlen(s) + 4 - strlen(s)%4;
 }
 
+/**
+ * \brief Ecrit dans le champ p->data la chaine de caractères s à partir de l'itérateur it
+ * Cette fonction doit être utilisée de la façon suivante si on veut l'utiliser plusieurs fois :
+ * it = write_data(p,s,it);
+ * \param *p paquet à éditer
+ * \param s chaine de caracteres à écrire
+ * \param it itérateur
+ * \return valeur de l'itérateur après passage sur p->data
+ */
 int write_data(UDPpacket *p, char * s, int it)
 {
     for(int j = 0 ; j < size_bytes(s) ; j++)

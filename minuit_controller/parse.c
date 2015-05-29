@@ -1,10 +1,3 @@
-/*
- * parse.c
- *
- *  Created on: 29 mai 2015
- *      Author: nicho
- */
-
 #include <string.h>
 #include "com.h"
 
