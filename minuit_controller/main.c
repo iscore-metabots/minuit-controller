@@ -5,9 +5,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "com.h"
 #include "metabot.h"
-#include "net.h"
-#include "parse.h"
 
 
 int main(int argc, char **argv)

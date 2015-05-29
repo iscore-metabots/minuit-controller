@@ -5,8 +5,8 @@
  *      Author: nicho
  */
 
-#include "parse.h"
 #include <string.h>
+#include "com.h"
 
 Protocol get_protocol(UDPpacket *p){
 	if(p->data[0] == '/')
