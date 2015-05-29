@@ -8,18 +8,32 @@
 #ifndef METABOT_H_
 #define METABOT_H_
 
-#define DEBUG_MODE 1
+
+#define DEBUG_MODE 1 /* 0 active le robot, 1 ne l'active pas */
 
 #define NB_NODES 3
 
 typedef struct node * Node;
-typedef Node * Metabot;
+typedef struct metabot * Metabot;
 
 /**
- * \brief Initialise un métabot
+ * \brief Initialise un métabot et se connecte au périphérique
+ * \param path Chemin du périphérique metabot
  * \return metabot initialisé
  */
-extern Metabot new_metabot();
+extern Metabot new_metabot(char * path);
+
+/**
+ * \brief Envoie la commande "start" sur le metabot
+ * \param m Metabot
+ */
+extern void start(Metabot m);
+
+/**
+ * \brief Envoie la commande "stop" sur le metabot
+ * \param m Metabot
+ */
+extern void stop(Metabot m);
 
 /**
  * \brief Affiche les nodes et leurs attributs du métabot m
@@ -31,7 +45,7 @@ extern void display_metabot(Metabot m);
  * \brief libère la mémoire allouée à un metabot
  * \param m Metabot
  */
-extern void free_metabot(m);
+extern void free_metabot(Metabot m);
 
 /**
  * \brief renvoie le nom de la node passée en paramètre
@@ -77,10 +91,10 @@ char ** namespace_cmd_array(Metabot m);
 char ** namespace_node_cmd_array(Metabot m, char * node);
 
 /**
- * \brief Execute la commande cmd sur le fichier fd (correspondant au metabot)
+ * \brief Execute la commande cmd sur le metabot m
  * \param cmd Commande
- * \param fd Fichier correspondant au metabot
+ * \param m Metabot
  */
-void execute(char * cmd, int fd);
+void execute(char * cmd, Metabot m);
 
 #endif /* METABOT_H_ */

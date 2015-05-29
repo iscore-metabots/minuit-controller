@@ -22,6 +22,11 @@ struct node{
 	int size;
 };
 
+struct metabot{
+	Node * nodes;
+	int fd;
+};
+
 /**
  * \brief Initialise une node
  * \param name Nom de la node
@@ -47,12 +52,27 @@ Node new_node(char * name, char * description, char attributes[][10], int size){
 
 }
 
-Metabot new_metabot(){
-	Metabot m = malloc(NB_NODES*sizeof(Node));
-	m[0]=new_node("moves", "Fonctions de mouvement", t_moves, 4);
-	m[1]=new_node("sys", "Fonctions système", t_sys, 2);
-	m[2]=new_node("modes", "Fonctions modes", t_modes, 6);
+Metabot new_metabot(char * path){
+	Metabot m = malloc(sizeof(struct metabot));
+	m->nodes = malloc(NB_NODES*sizeof(Node));
+	m->nodes[0]=new_node("moves", "Fonctions de mouvement", t_moves, 4);
+	m->nodes[1]=new_node("sys", "Fonctions système", t_sys, 2);
+	m->nodes[2]=new_node("modes", "Fonctions modes", t_modes, 6);
+	if(!DEBUG_MODE)
+		m->fd = open(path, O_RDWR);
+	else
+		m->fd = 0;
 	return m;
+}
+
+void start(Metabot m){
+	if(write(m->fd, "start\n", strlen("start\n"))==-1)
+		printf("Couldn't write \"start\"\n");
+}
+
+void stop(Metabot m){
+	if(write(m->fd, "stop\n", strlen("stop\n"))==-1)
+		printf("Couldn't write \"start\"\n");
 }
 
 /**
@@ -71,7 +91,7 @@ void free_node(Node n){
 
 void free_metabot(Metabot m){
 	for(int i = 0; i < NB_NODES ; i++)
-		free_node(m[i]);
+		free_node(m->nodes[i]);
 	free(m);
 }
 
@@ -86,7 +106,7 @@ void display_node(Node n){
 void display_metabot(Metabot m){
 	printf("Metabot :\n");
 	for(int i = 0 ; i < NB_NODES ; i++){
-		display_node(m[i]);
+		display_node(m->nodes[i]);
 	}
 }
 
@@ -106,9 +126,9 @@ int node_size(Node n){
 	return n->size;
 }
 
-void execute(char * cmd, int fd){
+void execute(char * cmd, Metabot m){
 	if(!DEBUG_MODE){
-		if(write(fd, cmd, strlen(cmd)) == -1)
+		if(write(m->fd, cmd, strlen(cmd)) == -1)
 			printf("Couldn't write \"%s\"", cmd);
 	}
 	else
@@ -127,7 +147,7 @@ char ** namespace_cmd_array(Metabot m){
 
 char ** namespace_node_cmd_array(Metabot m, char * node){
 	int i = 0;
-	while(i<NB_NODES && !strcmp(m[i]->name, node))
+	while(i<NB_NODES && !strcmp(m->nodes[i]->name, node))
 		i++;
 	char ** array = malloc(sizeof(array)); //Ici, il faut créer le message à envoyer.
 	return array;

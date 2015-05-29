@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <fcntl.h>
-#include <unistd.h>
-
 #include "com.h"
 #include "metabot.h"
 
@@ -34,20 +31,14 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	/* Initialiser le metabot */
-	Metabot m = new_metabot();
-
+	/* Initialiser le metabot et s'y connecter */
+	Metabot m = new_metabot("/dev/rfcomm0");
+	if(!DEBUG_MODE)
+		start(m);
 	/* Permet de voir les nodes et les attributs du metabot */
 	if(DEBUG_MODE)
 		display_metabot(m);
 
-	/* Etablir la connection avec le metabot */
-	int fd = 0;
-	if(!DEBUG_MODE){
-		fd = open("/dev/rfcomm0", O_RDWR);
-		if(write(fd, "start\n", strlen("start\n"))==-1)
-			printf("Couldn't write \"start\"\n");
-	}
 	/* Boucle principale */
 	int quit = 0;
 	while (!quit)
@@ -57,8 +48,7 @@ int main(int argc, char **argv)
 		{
 			switch(get_protocol(p)){
 			case OSC:
-				printf("OSC\n");
-				execute(OSC_to_Metabot(p) , fd);
+				execute(OSC_to_Metabot(p) , m);
 				break;
 
 			case minuit_namespace:
@@ -85,9 +75,7 @@ int main(int argc, char **argv)
 
 	/* Fermer la connection avec le Metabot */
 	if(!DEBUG_MODE){
-		if(write(fd, "stop\n", strlen("stop\n")) == -1)
-			printf("Couldn't write \"stop\"\n");
-		close(fd);
+		stop(m);
 	}
 
 	/* Libérer la mémoire et quitter */
