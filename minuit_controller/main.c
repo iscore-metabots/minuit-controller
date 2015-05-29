@@ -4,35 +4,16 @@
 
 #include <fcntl.h>
 #include <unistd.h>
-#include "controller.h"
+
 #include "metabot.h"
+#include "net.h"
 #include "parse.h"
 
 
 int main(int argc, char **argv)
 {
-	UDPsocket sd;       /* Socket descriptor */
-	UDPpacket *p;       /* Pointer to packet memory */
-
-	//Initialisation des nodes et de leurs attributs
-	//Plus tard, ces données seront modifiables via un fichier ou un menu
-	char t_moves[][10] = {"h", "dx", "dy", "turn"};
-	char t_sys[][10] = {"start", "stop"};
-	char t_modes[][10] = {"alt", "crab", "backleg", "back", "freq", "gait"};
-
-	Metabot m = new_metabot(t_moves, t_sys, t_modes);
-
-	if(DEBUG_MODE)
-		display_metabot(m);
-
-	int fd = 0;
-	if(!DEBUG_MODE){
-		fd = open("/dev/rfcomm0", O_RDWR);
-		if(write(fd, "start\n", strlen("start\n"))==-1)
-			printf("Couldn't write \"start\"\n");
-	}
-
 	/* Initialize SDL_net */
+	UDPpacket *p;
 	if (SDLNet_Init() < 0)
 	{
 		fprintf(stderr, "SDLNet_Init: %s\n", SDLNet_GetError());
@@ -40,6 +21,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Open a socket */
+	UDPsocket sd;
 	if (!(sd = SDLNet_UDP_Open(9998)))
 	{
 		fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
@@ -53,6 +35,18 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+
+	Metabot m = new_metabot();
+
+	if(DEBUG_MODE)
+		display_metabot(m);
+
+	int fd = 0;
+	if(!DEBUG_MODE){
+		fd = open("/dev/rfcomm0", O_RDWR);
+		if(write(fd, "start\n", strlen("start\n"))==-1)
+			printf("Couldn't write \"start\"\n");
+	}
 	/* Main loop */
 	int quit = 0;
 	while (!quit)
@@ -63,30 +57,18 @@ int main(int argc, char **argv)
 			switch(get_protocol(p)){
 			case OSC:
 				printf("OSC\n");
-				receive_OSC_command(p, fd);
+				execute(OSC_to_Metabot(p) , fd);
 				break;
+
 			case minuit_namespace:
 				printf("minuit_namespace\n");
-				answer_namespace(9998);
+				char ** cmd = namespace_cmd_array(m);
+				send_answer(cmd,9998);
 				break;
+
 			case minuit_node:
 				printf("minuit_node\n");
-				int i = 0;
-				while(i < p->len && p->data[i] != '/')
-					i++;
-				//copie de la commande
-				char * name = malloc(32*sizeof(char));
-				name = strcpy(name, (char *)p->data+i);
-				Node n;
-				for(int x = 0 ; x < NB_NODES ; x++)
-				{
-					n=m[x];
-					if(strcmp(name, node_name(n)))
-					{
-						answer_namespace_node(x,9998);
-					}
-				}
-				free(name);
+				send_answer(namespace_node_cmd_array(m, get_node_namespace(p)),9998);
 				break;
 
 			case unknown:

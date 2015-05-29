@@ -6,8 +6,14 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <string.h>
 #include "metabot.h"
+
+static char t_moves[][10] = {"h", "dx", "dy", "turn"};
+static char t_sys[][10] = {"start", "stop"};
+static char t_modes[][10] = {"alt", "crab", "backleg", "back", "freq", "gait"};
 
 struct node{
 	char * name;
@@ -33,7 +39,7 @@ Node new_node(char * name, char * description, char attributes[][10], int size){
 
 }
 
-Metabot new_metabot(char t_moves [][10], char t_sys[][10], char t_modes[][10]){
+Metabot new_metabot(){
 	Metabot m = malloc(NB_NODES*sizeof(Node));
 	m[0]=new_node("moves", "Fonctions de mouvement", t_moves, 4);
 	m[1]=new_node("sys", "Fonctions système", t_sys, 2);
@@ -86,4 +92,31 @@ char ** node_attr(Node n){
 
 int node_size(Node n){
 	return n->size;
+}
+
+void execute(char * cmd, int fd){
+	if(!DEBUG_MODE){
+		if(write(fd, cmd, strlen(cmd)) == -1)
+			printf("Couldn't write \"%s\"", cmd);
+	}
+	else
+		printf("%s", cmd);
+}
+
+char ** namespace_cmd_array(Metabot m){
+	char array2[][20] = {"Metabot:namespace", ",s", "/", "nodes={", "moves", "sys", "modes", "}"};
+	char ** array = malloc(sizeof(array2));
+	for(int i = 0; i < 8 ; i++){
+		array[i] = malloc(strlen(array2[i]));
+		array[i] = strcpy(array[i], array2[i]);
+	}
+	return array;
+}
+
+char ** namespace_node_cmd_array(Metabot m, char * node){
+	int i = 0;
+	while(i<NB_NODES && !strcmp(m[i]->name, node))
+		i++;
+	char ** array = malloc(sizeof(array)); //Ici, il faut créer le message à envoyer.
+	return array;
 }
