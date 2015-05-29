@@ -11,7 +11,7 @@
 
 int main(int argc, char **argv)
 {
-	/* Initialize SDL_net */
+	/* Initialiser SDL_net */
 	UDPpacket *p;
 	if (SDLNet_Init() < 0)
 	{
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	/* Open a socket */
+	/* Ouvrir un socket */
 	UDPsocket sd;
 	if (!(sd = SDLNet_UDP_Open(9998)))
 	{
@@ -27,30 +27,32 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	/* Make space for the packet */
+	/* Allouer de la place pour le paquet */
 	if (!(p = SDLNet_AllocPacket(512)))
 	{
 		fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
 		exit(EXIT_FAILURE);
 	}
 
-
+	/* Initialiser le metabot */
 	Metabot m = new_metabot();
 
+	/* Permet de voir les nodes et les attributs du metabot */
 	if(DEBUG_MODE)
 		display_metabot(m);
 
+	/* Etablir la connection avec le metabot */
 	int fd = 0;
 	if(!DEBUG_MODE){
 		fd = open("/dev/rfcomm0", O_RDWR);
 		if(write(fd, "start\n", strlen("start\n"))==-1)
 			printf("Couldn't write \"start\"\n");
 	}
-	/* Main loop */
+	/* Boucle principale */
 	int quit = 0;
 	while (!quit)
 	{
-		/* Wait a packet. UDP_Recv returns != 0 if a packet is coming */
+		/* Attendre un paquet. UDP_Recv retourne != 0 si un paquet arrive */
 		if (SDLNet_UDP_Recv(sd, p))
 		{
 			switch(get_protocol(p)){
@@ -70,26 +72,27 @@ int main(int argc, char **argv)
 				send_answer(namespace_node_cmd_array(m, get_node_namespace(p)),9998);
 				break;
 
-			case unknown:
-				printf("Unknown protocol\n");
-				break;
-
 			case minuit_reply:
 				printf("Reply\n");
+				break;
+
+			case unknown:
+				printf("Unknown protocol\n");
 				break;
 			}
 		}
 	}
-	/* Clean and exit */
-	free_metabot(m);
-	SDLNet_FreePacket(p);
-	SDLNet_Quit();
+
+	/* Fermer la connection avec le Metabot */
 	if(!DEBUG_MODE){
 		if(write(fd, "stop\n", strlen("stop\n")) == -1)
 			printf("Couldn't write \"stop\"\n");
 		close(fd);
 	}
 
-
+	/* Libérer la mémoire et quitter */
+	free_metabot(m);
+	SDLNet_FreePacket(p);
+	SDLNet_Quit();
 	return EXIT_SUCCESS;
 }
