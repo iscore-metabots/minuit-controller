@@ -92,6 +92,7 @@ void free_node(Node n){
 void free_metabot(Metabot m){
 	for(int i = 0; i < NB_NODES ; i++)
 		free_node(m->nodes[i]);
+	close(m->fd);
 	free(m);
 }
 
