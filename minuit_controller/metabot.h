@@ -88,7 +88,7 @@ char ** namespace_cmd_array(Metabot m);
  * \param node chaine de caractères contenant le nom de la node
  * \return Tableau de chaines de caractères
  */
-char ** namespace_node_cmd_array(Metabot m, char * node);
+char ** namespace_node_cmd_array(Node n);
 
 /**
  * \brief Execute la commande cmd sur le metabot m
@@ -96,5 +96,11 @@ char ** namespace_node_cmd_array(Metabot m, char * node);
  * \param m Metabot
  */
 void execute(char * cmd, Metabot m);
+
+int node_search(Metabot m, char * name);
+
+Node get_node(Metabot m, int i);
+
+void free_cmd_array(char ** cmd);
 
 #endif /* METABOT_H_ */

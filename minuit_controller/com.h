@@ -6,18 +6,13 @@
 enum protocol { OSC, minuit_namespace, minuit_node, minuit_reply, unknown };
 typedef enum protocol Protocol;
 
+typedef struct str_array * Str_array;
+
 /**\brief Renvoie le protocole correspondant au message contenu dans p->data
  * \param UDPpacket *p le paquet à analyser
  * \return Protocole de p
  */
 extern Protocol get_protocol(UDPpacket *p);
-
-/**
- * \brief Convertit un message OSC en une ligne de commande executable par un Metabot
- * \param *p le paquet contenant le message
- * \return Chaine de caractère contenant une instruction
- */
-extern char * OSC_to_Metabot(UDPpacket *p);
 
 /**
  * \brief Renvoie le nom de la node indiquée dans le message
@@ -34,5 +29,8 @@ extern char * get_node_namespace(UDPpacket *p);
  */
 extern void send_answer(char ** cmd, int port);
 
+Str_array OSC_to_str_array(UDPpacket *p);
+
+char * str_array_to_cmd(Str_array str);
 
 #endif /* COM_H_ */

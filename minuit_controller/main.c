@@ -48,18 +48,34 @@ int main(int argc, char **argv)
 		{
 			switch(get_protocol(p)){
 			case OSC:
-				execute(OSC_to_Metabot(p) , m);
+				execute(str_array_to_cmd(OSC_to_str_array(p)), m);
 				break;
 
 			case minuit_namespace:
 				printf("minuit_namespace\n");
 				char ** cmd = namespace_cmd_array(m);
-				send_answer(cmd,9998);
+				send_answer(cmd,13579);
 				break;
 
 			case minuit_node:
 				printf("minuit_node\n");
-				send_answer(namespace_node_cmd_array(m, get_node_namespace(p)),9998);
+				char * name = get_node_namespace(p);
+				printf("%s\n", name);
+				int i = node_search(m, name);
+				if(i < 0)
+					printf("La node n'existe pas");
+				else{
+					Node n = get_node(m,i);
+					printf("Node = %s\n", node_name(n));
+					char ** cmd = namespace_node_cmd_array(n);
+					printf("%lud\n", sizeof(cmd));
+					for(int x = 0 ; x < sizeof(cmd)+ 1 ; x++){
+						printf("%d :", x);
+						printf("%s\n",cmd[x]);
+					}
+					send_answer(cmd, 13579);
+					free_cmd_array(cmd);
+				}
 				break;
 
 			case minuit_reply:

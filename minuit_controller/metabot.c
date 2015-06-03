@@ -11,9 +11,9 @@
 #include <string.h>
 #include "metabot.h"
 
-static char t_moves[][10] = {"h", "dx", "dy", "turn"};
-static char t_sys[][10] = {"start", "stop"};
-static char t_modes[][10] = {"alt", "crab", "backleg", "back", "freq", "gait"};
+static char * t_moves[] = {"h", "dx", "dy", "turn"};
+static char  * t_sys[] = {"start", "stop"};
+static char * t_modes[] = {"alt", "crab", "backleg", "back", "freq", "gait"};
 
 struct node{
 	char * name;
@@ -27,6 +27,7 @@ struct metabot{
 	int fd;
 };
 
+
 /**
  * \brief Initialise une node
  * \param name Nom de la node
@@ -35,7 +36,7 @@ struct metabot{
  * \param size Taille du tableau attributes
  * \return Node initalisée
  */
-Node new_node(char * name, char * description, char attributes[][10], int size){
+Node new_node(char * name, char * description, char * attributes[], int size){
 	Node n = malloc(sizeof(struct node));
 	n->name = malloc(strlen(name)+1);
 	strcpy(n->name, name);
@@ -111,6 +112,10 @@ void display_metabot(Metabot m){
 	}
 }
 
+Node get_node(Metabot m, int i){
+	return m->nodes[i];
+}
+
 char * node_name(Node n){
 	return n->name;
 }
@@ -137,19 +142,58 @@ void execute(char * cmd, Metabot m){
 }
 
 char ** namespace_cmd_array(Metabot m){
-	char array2[][20] = {"Metabot:namespace", ",s", "/", "nodes={", "moves", "sys", "modes", "}"};
+	char array2[][20] = {"Metabot:namespace", ",ssssss", "/", "Application", "nodes={", "moves", "modes", "}"};
 	char ** array = malloc(sizeof(array2));
-	for(int i = 0; i < 8 ; i++){
+	for(int i = 0; i < 9 ; i++){
 		array[i] = malloc(strlen(array2[i]));
 		array[i] = strcpy(array[i], array2[i]);
 	}
 	return array;
 }
 
-char ** namespace_node_cmd_array(Metabot m, char * node){
+char ** namespace_node_cmd_array(Node n){
+	char ** array = malloc((n->size + 7)*sizeof(char *));
+	printf("Size array :%d\n", n->size +7);
+	array[0] = malloc(sizeof("Metabot:namespace" + 1));
+	array[0] = strcpy(array[0], "Metabot:namespace");
+	array[1] = malloc(sizeof(char) * (n->size +4));
+	array[1][0] = ',';
+	printf("Size s : %d\n", n->size +4);
+	for(int j = 1 ; j < n->size +4 ; j++){
+		array[1][j] = 's';
+	}
+	array[1][n->size +3]= '\0';
+	array[2] = malloc(sizeof(char) * (strlen(n->name) + 1));
+	array[2][0] = '/';
+	for(int l = 1 ; l< strlen(n->name)+1 ; l++){
+		array[2][l] = n->name[l-1];
+	}
+	array[3] = malloc(sizeof("attributes={" + 1));
+	array[3] = strcpy(array[3], "attributes={");
 	int i = 0;
-	while(i<NB_NODES && !strcmp(m->nodes[i]->name, node))
+	while(i < n->size){
+		array[i+4] = malloc(strlen(n->attributes[i]));
+		array[i+4] = strcpy(array[i+4],n->attributes[i]);
 		i++;
-	char ** array = malloc(sizeof(array)); //Ici, il faut créer le message à envoyer.
+	}
+	array[i+4] = malloc(sizeof(char)*2);
+	array[i+4] = "}";
 	return array;
+}
+
+void free_cmd_array(char ** cmd){
+	for(int i = 0 ; i < sizeof(cmd) ; i++)
+		free(cmd[i]);
+	free(cmd);
+}
+
+int node_search(Metabot m, char * name){
+	int i = 0;
+	printf("Name = %s\n", name);
+	while(i < NB_NODES){
+		if(!strcmp(m->nodes[i]->name, name))
+			return i;
+		i++;
+	}
+	return -1;
 }
