@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "com.h"
 #include "metabot.h"
+#include "minuit.h"
 
 
 int main(int argc, char **argv)
@@ -46,38 +46,19 @@ int main(int argc, char **argv)
 		/* Attendre un paquet. UDP_Recv retourne != 0 si un paquet arrive */
 		if (SDLNet_UDP_Recv(sd, p))
 		{
-			switch(get_protocol(p)){
+			Str_array str = minuit_to_str_array(p);
+			print_str_array(str);
+			switch(protocol(str)){
 			case OSC:
-				execute(str_array_to_cmd(OSC_to_str_array(p)), m);
+				execute(str_array_to_cmd(str), m);
 				break;
 
-			case minuit_namespace:
-				printf("minuit_namespace\n");
-				char ** cmd = namespace_cmd_array(m);
-				send_answer(cmd,13579);
+			case minuit_query:
+				;//empty statement
+				Str_array answer = namespace_answer(get_device(m), get_string(str, 4));
+				print_str_array(answer);
+				send_answer(answer, 13579);
 				break;
-
-			case minuit_node:
-				printf("minuit_node\n");
-				char * name = get_node_namespace(p);
-				printf("%s\n", name);
-				int i = node_search(m, name);
-				if(i < 0)
-					printf("La node n'existe pas");
-				else{
-					Node n = get_node(m,i);
-					printf("Node = %s\n", node_name(n));
-					char ** cmd = namespace_node_cmd_array(n);
-					printf("%lud\n", sizeof(cmd));
-					for(int x = 0 ; x < sizeof(cmd)+ 1 ; x++){
-						printf("%d :", x);
-						printf("%s\n",cmd[x]);
-					}
-					send_answer(cmd, 13579);
-					free_cmd_array(cmd);
-				}
-				break;
-
 			case minuit_reply:
 				printf("Reply\n");
 				break;
