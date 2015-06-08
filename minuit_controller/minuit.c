@@ -111,7 +111,7 @@ int size_bytes(int i)
 
 int write_data(UDPpacket *p, char * s, int it)
 {
-    for(int j = 0 ; j < size_bytes(strlen(s)) ; j++)
+    for(int j = 0 ; j < size_bytes(strlen(s)+1) ; j++)
     {
         if(j < strlen(s))
             p->data[it] = s[j];
@@ -247,7 +247,7 @@ void write_minuit_packet(Str_array str, UDPpacket *p){
 	it = write_data(p, head, it);
 	for(int i_str = 3 ; i_str < str->size ; i_str++)
 	{
-		p->len += size_bytes(strlen(str->t[i_str]));
+		p->len += size_bytes(strlen(str->t[i_str])+1);
 		it = write_data(p, str->t[i_str], it);
 	}
 }
@@ -272,7 +272,7 @@ Str_array namespace_answer(Device d, char * path){
 		//fabriquer namespace général
 		char * type = malloc(sizeof(char)*(d->nodes_len + 5));
 		type[0] = ',';
-		for(int i = 1 ; i < d->nodes_len+4 ; i++)
+		for(int i = 1 ; i < d->nodes_len+5 ; i++)
 			type[i] = 's';
 		type[d->nodes_len + 5] = '\0';
 		str = str_array_append(str, type);
@@ -295,11 +295,11 @@ Str_array namespace_answer(Device d, char * path){
 			printf("Couldn't find node\n");
 			return str;
 		}
-		char * type = malloc(sizeof(char)*(n->size + 5));
+		char * type = malloc(sizeof(char)*(n->size + 6));
 		type[0] = ',';
-		for(int i = 1 ; i < n->size+5 ; i++)
+		for(int i = 1 ; i < n->size+6 ; i++)
 			type[i] = 's';
-		type[n->size+5] = '\0';
+		type[n->size+6] = '\0';
 		str = str_array_append(str, type);
 		free(type);
 		str = str_array_append(str, path);
