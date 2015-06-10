@@ -1,11 +1,14 @@
 #include <string.h>
-
+#include "UDPserver.h"
+#include <stdlib.h>
+#include <stdio.h>
 #include "minuit.h"
 
 
 struct str_array{
 	int size;
 	char ** t;
+	int max_size;
 };
 
 struct node{
@@ -109,14 +112,14 @@ int size_bytes(int i)
 		return  i + 4 - i%4;
 }
 
-int write_data(UDPpacket *p, char * s, int it)
+int write_data(DATA p, char * s, int it)
 {
     for(int j = 0 ; j < size_bytes(strlen(s)+1) ; j++)
     {
         if(j < strlen(s))
-            p->data[it] = s[j];
+            ds_string(p)[it] = s[j];
         else
-            p->data[it] = 0;
+            ds_string(p)[it] = '\0';
         it++;
     }
     return it;
@@ -125,15 +128,19 @@ int write_data(UDPpacket *p, char * s, int it)
 
 Str_array new_string_array(char * s){
 	Str_array str = malloc(sizeof(struct str_array));
-	str->t = malloc(sizeof(char *));
+	str->t = malloc(ARRAY_SIZE * sizeof(char *));
 	str->t[0] = malloc(strlen(s) +1);
 	str->t[0] = strcpy(str->t[0], s);
 	str->size = 1;
+	str->max_size = ARRAY_SIZE;
 	return str;
 }
 
 Str_array str_array_append(Str_array str, char * s){
-	str->t = realloc(str->t, (str->size +1)*sizeof(char *));
+	if(str->size >= str->max_size){
+		str->t = realloc(str, ARRAY_SIZE * 2 * sizeof(char *));
+		str->max_size *=2;
+	}
 	str->t[str->size] = malloc(strlen(s)+1);
 	str->t[str->size] = strcpy(str->t[str->size], s);
 	str->size += 1 ;
@@ -148,85 +155,80 @@ void free_str_array(Str_array str){
 }
 
 char * get_string(Str_array str, int i){
-	return str->t[i];
-}
-
-char * data_to_string(Uint8 * data, int n){
-	char * s = malloc(sizeof(char)*(n));
-	for(int i = 0 ; i < n ; i++){
-		s[i] = (char)data[i];
+	if(i < str->size)
+		return str->t[i];
+	else{
+		printf("Erreur de segmentation\n");
+		return "";
 	}
-	s[n] = '\0';
-	return s;
 }
 
-char * data_to_string_int(Uint8 * data){
+char * string_to_float_ASCII(char * str){
 	char * s = malloc(sizeof(char)*5);
-	long int d = 0;
+	int d = 0;
 	for(int j = 0; j < 4 ; j++)
 	{
 		d <<= 8;
-		d += data[j];
+		d += str[j] & 0xFF;
 	}
-	sprintf( s, "%ld", d);
-	return s;
-}
 
-char * data_to_string_float(Uint8 * data){
-	char * s = malloc(sizeof(char)*5);
-	long int * d = malloc(sizeof(long int));
-	for(int j = 0; j < 4 ; j++)
-	{
-		*d <<= 8;
-		*d += data[j];
-	}
-	float * f = (float * )d;
+	float * f = (float * )&d;
 	sprintf( s, "%f", *f);
-	free(d);
 	return s;
-
 }
 
-//adresse mail du developpeur de minuit : theod@gmea.net
-char * get_node_namespace(UDPpacket *p){
-	int i = 0;
-	while(i < p->len && p->data[i] != '/')
-		i++;
-	//copie de la commande
-	char * name = malloc(32*sizeof(char));
-	name = strcpy(name, (char *)p->data+i+1);
-	return name;
+
+char * string_to_int_ASCII(char * str){
+	int d = 0;
+	char * s = malloc(sizeof(char)*5);
+	for(int i = 0 ; i < 4 ; i++){
+		d <<= 8;
+		d += str[i] & 0xFF;
+	}
+	sprintf( s, "%d", d);
+	return s;
 }
 
-Str_array OSC_to_str_array(UDPpacket *p){
+char * data_cpy(DATA p, int debut, int fin){
+	char * tmp = malloc((fin - debut)*sizeof(char) + 1);
 	int i = 0;
-	while(i < p->len && p->data[i] != ',')
+	while(i < ds_len(p) - debut && i < fin - debut){
+		tmp[i] = ds_string(p)[debut+i];
 		i++;
-	char * tmp = data_to_string(p->data, i);
+	}
+	tmp[fin] = '\0';
+	return tmp;
+}
+
+Str_array OSC_to_str_array(DATA p){
+	int i = 0;
+	while(i < ds_len(p) && ds_string(p)[i] != ',')
+		i++;
+	char * tmp = data_cpy(p, 0, i);
 	Str_array str = new_string_array(tmp);
-	str = str_array_append(str, data_to_string(p->data + i, 4));
-
-	if(str->t[1][1] == 'i')
-		str = str_array_append(str, data_to_string_int(p->data + i+4));
+	str = str_array_append(str, data_cpy(p, i, i+2));
+	if(str->t[1][1] == 'i'){
+		str = str_array_append(str, string_to_int_ASCII(data_cpy(p, i+4, ds_len(p))));
+	}
 	if(str->t[1][1] == 'f')
-		str = str_array_append(str, data_to_string_float(p->data + i+4));
+		str = str_array_append(str, string_to_float_ASCII(data_cpy(p, i+4, ds_len(p))));
 	return str;
 }
 
-Str_array minuit_to_str_array(UDPpacket *p){
-	if(p->data[0] == '/')
+Str_array minuit_to_str_array(DATA p){
+	if(ds_string(p)[0] == '/')
 		return OSC_to_str_array(p);
 	int i = 0;
-	while(i < p->len && p->data[i] != '?' && p->data[i] != ':')
+	while(i < ds_len(p) && ds_string(p)[i] != '?' && ds_string(p)[i] != ':')
 		i++;
-	Str_array str = new_string_array(data_to_string(p->data, i));
-	str = str_array_append(str, data_to_string(p->data+i, 1));
+	Str_array str = new_string_array(data_cpy(p, 0, i));
+	str = str_array_append(str, data_cpy(p, i, i+1));
 	i++;
-	while(i <p->len){
+	while(i <ds_len(p)){
 		int j = 0;
-		while(j < p->len - i && p->data[j+i] != '\0')
+		while(j < ds_len(p) - i && ds_string(p)[j+i] != '\0')
 			j++;
-		str = str_array_append(str, data_to_string(p->data+i, j));
+		str = str_array_append(str, data_cpy(p, i, j + i));
 		i += size_bytes(j);
 	}
 	return str;
@@ -239,17 +241,19 @@ void print_str_array(Str_array str){
 	printf("\n");
 }
 
-void write_minuit_packet(Str_array str, UDPpacket *p){
-	char * head = malloc(strlen(str->t[0]) + strlen(str->t[1]) + strlen(str->t[2]));
+void write_minuit_packet(Str_array str, DATA p){
+	char * head = malloc(strlen(str->t[0]) + strlen(str->t[1]) + strlen(str->t[2]) + 3);
 	sprintf(head, "%s%s%s", str->t[0], str->t[1], str->t[2]);
 	int it = 0;
-	p->len += size_bytes(strlen(head));
+	ds_len_set(p, 0);
+	ds_len_set(p, ds_len(p) + size_bytes(strlen(head)) );
 	it = write_data(p, head, it);
 	for(int i_str = 3 ; i_str < str->size ; i_str++)
 	{
-		p->len += size_bytes(strlen(str->t[i_str])+1);
+		ds_len_set(p, ds_len(p) + size_bytes(strlen(str->t[i_str])+1));
 		it = write_data(p, str->t[i_str], it);
 	}
+	printf("p->data = %s\n", ds_string(p));
 }
 
 Protocol protocol(Str_array str){
@@ -295,54 +299,20 @@ Str_array namespace_answer(Device d, char * path){
 			printf("Couldn't find node\n");
 			return str;
 		}
-		char * type = malloc(sizeof(char)*(n->size + 6));
+		char * type = malloc(sizeof(char)*(n->size + 5));
 		type[0] = ',';
-		for(int i = 1 ; i < n->size+6 ; i++)
+		for(int i = 1 ; i < n->size+5 ; i++)
 			type[i] = 's';
-		type[n->size+6] = '\0';
+		type[n->size+5] = '\0';
 		str = str_array_append(str, type);
 		free(type);
 		str = str_array_append(str, path);
+		str = str_array_append(str, "none");
 		str = str_array_append(str, "attributes={");
 		for(int i = 0 ; i < n->size ; i++)
 			str = str_array_append(str, n->attributes[i]);
 		str = str_array_append(str, "}");
 	}
 	return str;
-}
-
-void send_answer(Str_array str, int port)
-{
-    UDPsocket sd;
-    IPaddress srvadd;
-    UDPpacket *p;
-
-    /* Open a socket on random port */
-    if (!(sd = SDLNet_UDP_Open(0)))
-    {
-        fprintf(stderr, "SDLNet_UDP_Open: %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    /* Resolve server name  */
-    if (SDLNet_ResolveHost(&srvadd, "localhost", port) == -1)
-    {
-        fprintf(stderr, "SDLNet_ResolveHost(%s %d): %s\n", "localhost", port, SDLNet_GetError());
-        exit(EXIT_FAILURE);
-    }
-
-    /* Allocate memory for the packet */
-    if (!(p = SDLNet_AllocPacket(512)))
-    {
-        fprintf(stderr, "SDLNet_AllocPacket: %s\n", SDLNet_GetError());
-        exit(EXIT_FAILURE);
-    }
-    write_minuit_packet(str, p);
-    p->address.host = srvadd.host;	/* Set the destination host */
-    p->address.port = srvadd.port;	/* And destination port */
-
-    SDLNet_UDP_Send(sd, -1, p); /* This sets the p->channel */
-    SDLNet_FreePacket(p);
-    SDLNet_Quit();
 }
 
