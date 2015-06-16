@@ -42,7 +42,6 @@ void stop(Metabot m){
 		printf("Couldn't write \"start\"\n");
 }
 
-
 void free_metabot(Metabot m){
 	free_device(m->d);
 	close(m->fd);
@@ -71,6 +70,4 @@ void execute(char * cmd, Metabot m){
 		if(write(m->fd, cmd, strlen(cmd)) == -1)
 			printf("Couldn't write \"%s\"", cmd);
 	}
-	else
-		printf("%s", cmd);
 }

@@ -1,7 +1,9 @@
 #ifndef MINUIT_H_
 #define MINUIT_H_
 
-#include <SDL_net.h>
+#define ARRAY_SIZE 15
+
+#include "UDPserver.h"
 
 enum protocol { OSC, minuit_reply, minuit_query, unknown };
 typedef enum protocol Protocol;
@@ -25,11 +27,11 @@ Node get_node(Device d, int i);
 extern void send_answer(Str_array str, int port);
 Protocol protocol(Str_array str);
 
-Str_array OSC_to_str_array(UDPpacket *p);
+Str_array OSC_to_str_array(DATA p);
 
 char * str_array_to_cmd(Str_array str);
 
-Str_array minuit_to_str_array(UDPpacket *p);
+Str_array minuit_to_str_array(DATA p);
 
 /**
  * \brief Initialise une node
@@ -79,9 +81,10 @@ void display_node(Node n);
 Str_array namespace_answer(Device d, char * path);
 
 char * get_string(Str_array str, int i);
-Str_array new_string_array(char * s);
+Str_array new_string_array();
 Str_array str_array_append(Str_array str, char * s);
 void free_str_array(Str_array str);
 void print_str_array(Str_array str);
+void write_minuit_packet(Str_array str, DATA p);
 
 #endif /* MINUIT_H_ */

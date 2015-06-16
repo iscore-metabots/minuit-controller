@@ -24,7 +24,7 @@ struct device{
 	int nodes_len;
 };
 
-Node new_node(char * name, char * description, char * attributes[], int size){
+Node new_node(char * name, char * description, char ** attributes, int size){
 	Node n = malloc(sizeof(struct node));
 	n->name = malloc(strlen(name)+1);
 	strcpy(n->name, name);
@@ -126,25 +126,30 @@ int write_data(DATA p, char * s, int it)
 }
 
 
-Str_array new_string_array(char * s){
+Str_array new_string_array(){
 	Str_array str = malloc(sizeof(struct str_array));
 	str->t = malloc(ARRAY_SIZE * sizeof(char *));
-	str->t[0] = malloc(strlen(s) +1);
-	str->t[0] = strcpy(str->t[0], s);
-	str->size = 1;
+	str->size = 0;
 	str->max_size = ARRAY_SIZE;
 	return str;
 }
 
 Str_array str_array_append(Str_array str, char * s){
+	Str_array tmp = str;
 	if(str->size >= str->max_size){
-		str->t = realloc(str, ARRAY_SIZE * 2 * sizeof(char *));
-		str->max_size *=2;
+		tmp = malloc(sizeof(struct str_array));
+		tmp->t = malloc(str->max_size * 2 * sizeof(char*));
+		tmp->max_size = str->max_size*2;
+		tmp->size = str->size;
+		for(int i = 0 ; i < str->size ; i++)
+			tmp->t[i] = str->t[i];
+		free(str);
 	}
-	str->t[str->size] = malloc(strlen(s)+1);
-	str->t[str->size] = strcpy(str->t[str->size], s);
-	str->size += 1 ;
-	return str;
+	tmp->t[tmp->size] = malloc(strlen(s)+1);
+	tmp->t[tmp->size] = strcpy(tmp->t[tmp->size], s);
+	tmp->t[tmp->size][strlen(s)] = '\0';
+	tmp->size += 1 ;
+	return tmp;
 }
 
 void free_str_array(Str_array str){
@@ -196,7 +201,7 @@ char * data_cpy(DATA p, int debut, int fin){
 		tmp[i] = ds_string(p)[debut+i];
 		i++;
 	}
-	tmp[fin] = '\0';
+	tmp[fin-debut] = '\0';
 	return tmp;
 }
 
@@ -204,8 +209,8 @@ Str_array OSC_to_str_array(DATA p){
 	int i = 0;
 	while(i < ds_len(p) && ds_string(p)[i] != ',')
 		i++;
-	char * tmp = data_cpy(p, 0, i);
-	Str_array str = new_string_array(tmp);
+	Str_array str = new_string_array();
+	str = str_array_append(str, data_cpy(p, 0, i));
 	str = str_array_append(str, data_cpy(p, i, i+2));
 	if(str->t[1][1] == 'i'){
 		str = str_array_append(str, string_to_int_ASCII(data_cpy(p, i+4, ds_len(p))));
@@ -221,7 +226,8 @@ Str_array minuit_to_str_array(DATA p){
 	int i = 0;
 	while(i < ds_len(p) && ds_string(p)[i] != '?' && ds_string(p)[i] != ':')
 		i++;
-	Str_array str = new_string_array(data_cpy(p, 0, i));
+	Str_array str = new_string_array();
+	str = str_array_append(str, data_cpy(p, 0, i));
 	str = str_array_append(str, data_cpy(p, i, i+1));
 	i++;
 	while(i <ds_len(p)){
@@ -253,7 +259,6 @@ void write_minuit_packet(Str_array str, DATA p){
 		ds_len_set(p, ds_len(p) + size_bytes(strlen(str->t[i_str])+1));
 		it = write_data(p, str->t[i_str], it);
 	}
-	printf("p->data = %s\n", ds_string(p));
 }
 
 Protocol protocol(Str_array str){
@@ -269,12 +274,13 @@ Protocol protocol(Str_array str){
 
 //Réponse à une minuit_query
 Str_array namespace_answer(Device d, char * path){
-	Str_array str = new_string_array(d->name);
+	Str_array str = new_string_array();
+	str = str_array_append(str, d->name);
 	str = str_array_append(str, ":");
 	str = str_array_append(str, "namespace");
 	if(!strcmp(path, "/")){
 		//fabriquer namespace général
-		char * type = malloc(sizeof(char)*(d->nodes_len + 5));
+		char * type = malloc(sizeof(char)*(d->nodes_len + 6));
 		type[0] = ',';
 		for(int i = 1 ; i < d->nodes_len+5 ; i++)
 			type[i] = 's';
@@ -299,7 +305,7 @@ Str_array namespace_answer(Device d, char * path){
 			printf("Couldn't find node\n");
 			return str;
 		}
-		char * type = malloc(sizeof(char)*(n->size + 5));
+		char * type = malloc(sizeof(char)*(n->size + 6));
 		type[0] = ',';
 		for(int i = 1 ; i < n->size+5 ; i++)
 			type[i] = 's';

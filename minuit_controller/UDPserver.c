@@ -68,20 +68,16 @@ SOCKET init_socket(int port){
 DATA receive_socket(SOCKET sock){
   DATA p = malloc(sizeof(struct data_string));
   p->data = malloc(1024);
-  //struct hostent *hostinfo = NULL;
-  SOCKADDR_IN from = { 0 };
-  unsigned int fromsize = sizeof(from);
-  if((p->len = recvfrom(sock, p->data, 1024 - 1, 0, (SOCKADDR *)&from, &fromsize)) < 0)
+  if((p->len = recvfrom(sock, p->data, 1024, 0, NULL, NULL)) < 0)
     {
       perror("recvfrom()");
       exit(errno);
     }
-
   p->data[p->len] = '\0';
   return p;
 }
 
-void send_socket(SOCKET sock, DATA d,char * ip, int port){
+void send_socket(SOCKET sock, DATA d, char * ip, int port){
   struct sockaddr_in * to = malloc(sizeof(struct sockaddr_in));
   to->sin_addr.s_addr = inet_addr(ip);     // we specifed the address as a string, inet_addr translates to a number in the correct byte order
   to->sin_family = AF_INET;                         // ipv4
