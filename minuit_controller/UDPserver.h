@@ -15,6 +15,7 @@ typedef int SOCKET;
 
 char * ds_string(DATA d);
 int ds_len(DATA d);
+DATA init_data();
 void free_data(DATA d);
 SOCKET init_socket(int port);
 DATA receive_socket(SOCKET sock);

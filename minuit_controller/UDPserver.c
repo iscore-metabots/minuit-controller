@@ -24,6 +24,16 @@ struct data_string{
   int len;
 };
 
+DATA init_data(char * data, int len){
+	DATA d = malloc(sizeof(struct data_string));
+	d->data = malloc(len+1);
+        for(int i = 0 ; i < len ; i++){
+	  d->data[i] = data[i];
+	}
+	d->len = len;
+	return d;
+}
+
 void free_data(DATA d){
   free(d->data);
   free(d);
@@ -88,6 +98,7 @@ void send_socket(SOCKET sock, DATA d, char * ip, int port){
       perror("sendto()");
       exit(errno);
     }
+  free(to);
 }
 
 void close_socket(SOCKET sock){

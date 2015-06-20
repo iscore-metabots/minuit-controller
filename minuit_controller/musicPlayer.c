@@ -41,7 +41,7 @@ int main(int argc, char **argv){
 			printf("Reply\n");
 			break;
 
-		case unknown:
+		case unknown_protocol:
 			printf("Unknown protocol\n");
 			break;
 		}
