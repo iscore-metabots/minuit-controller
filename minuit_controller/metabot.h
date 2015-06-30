@@ -7,54 +7,69 @@
 
 #ifndef METABOT_H_
 #define METABOT_H_
-#include "minuit.h"
 
-#define DEBUG_MODE 1 /* 0 active le robot, 1 ne l'active pas */
+#include "minuit.h"
+#include "device.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define DEBUG_MODE 0 /* 0 activates the robot, 1 doesn't */
 
 #define NB_NODES 3
 
-typedef struct metabot * Metabot;
+  typedef struct metabot * Metabot;
 
-/**
- * \brief Initialise un métabot et se connecte au périphérique
- * \param path Chemin du périphérique metabot
- * \return metabot initialisé
- */
-extern Metabot new_metabot(char * path);
+  /**
+   * \brief Initialises a metabot and connects it if DEBUG_MODE == 1
+   * \param path serial port
+   */
+  extern Metabot new_metabot(char * path, char * configfile);
 
-/**
- * \brief Envoie la commande "start" sur le metabot
- * \param m Metabot
- */
-extern void start(Metabot m);
+  /**
+   * \brief Sends "start" command to the metabot
+   * \param m Metabot
+   */
+  extern void start(Metabot m);
 
-/**
- * \brief Envoie la commande "stop" sur le metabot
- * \param m Metabot
- */
-extern void stop(Metabot m);
+  /**
+   * \brief Sends "stop" command to the metabot
+   * \param m Metabot
+   */
+  extern void stop(Metabot m);
 
-/**
- * \brief Affiche les nodes et leurs attributs du métabot m
- * \param m Metabot à afficher
- */
-extern void display_metabot(Metabot m);
+  /**
+   * \brief displays the metabot inuit device tree
+   * \param m Metabot
+   */
+  extern void display_metabot(Metabot m);
 
-/**
- * \brief libère la mémoire allouée à un metabot
- * \param m Metabot
- */
-extern void free_metabot(Metabot m);
+  /**
+   * \brief frees a metabot
+   * \param m Metabot
+   */
+  extern void free_metabot(Metabot m);
 
-/**
- * \brief Execute la commande cmd sur le metabot m
- * \param cmd Commande
- * \param m Metabot
- */
-void execute(char * cmd, Metabot m);
+  /**
+   * \brief executes a command on the metabot
+   * \param cmd Command
+   * \param m Metabot
+   */
+  void execute(char * cmd, Metabot m);
 
-void free_cmd_array(char ** cmd);
+  /**
+   * \brief returns a metabot's device
+   */
+  Device get_device(Metabot m);
 
-Device get_device(Metabot m);
+  /**
+   * \brief Main loop function. Initialises a metabot, connects to it and runs the UDP server. This function contains recv which blocks the function until a message arrives. You need to send a OSC message containing "quit" in order to stop it.
+   */
+  void metabot_controller(char * serialport, char * port, char * configfile);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* METABOT_H_ */

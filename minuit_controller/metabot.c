@@ -1,9 +1,3 @@
-/*
- * metabot.c
- *
- *  Created on: 29 mai 2015
- *      Author: nicho
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -11,32 +5,14 @@
 #include <string.h>
 #include "metabot.h"
 
-static char * t_moves[] = {"h", "dx", "dy", "turn"};
-static char  * t_sys[] = {"start", "stop"};
-static char * t_modes[] = {"alt", "crab", "backleg", "back", "freq", "gait"};
-
 struct metabot{
   Device d;
   int fd;
 };
 
-Metabot new_metabot(char * path){
+Metabot new_metabot(char * path, char * configfile){
   Metabot m = malloc(sizeof(struct metabot));
-  Node n = new_node("Metabot", "root");
-  m->d = new_device("Metabot", n);
-  Node moves = new_node("moves", "Fonctions de mouvements");
-  Node sys = new_node("sys", "Fonctions systeme");
-  Node modes = new_node("modes", "Fonctions de mode");
-  add_subnode(n, moves);
-  add_subnode(n, sys);
-  add_subnode(n, modes);
-  for(int i = 0 ; i < 4 ; i++)
-    add_subnode(moves, new_node(t_moves[i], "subnode"));
-  for(int i = 0 ; i < 2 ; i++)
-    add_subnode(sys, new_node(t_sys[i], "subnode"));
-  for(int i = 0 ; i < 6 ; i++)
-    add_subnode(modes, new_node(t_modes[i], "subnode"));
-	
+  m->d = file_device(configfile);
   if(!DEBUG_MODE)
     m->fd = open(path, O_RDWR);
   else
@@ -82,4 +58,65 @@ void execute(char * cmd, Metabot m){
   }
   else
     printf("%s\n", cmd);
+}
+
+void metabot_controller(char * serialport, char * port, char * configfile){
+  Metabot m = new_metabot(serialport, configfile);
+  if(!DEBUG_MODE)
+    start(m);
+  // Permet de voir les nodes et les attributs du metabot
+  
+  if(DEBUG_MODE)
+    display_metabot(m);
+  
+  //Boucle principale
+  int quit = 0;
+  SOCKET s = init_socket(atoi(port));
+  while (!quit)
+    {
+      DATA p = receive_socket(s);
+      Str_array str = minuit_to_str_array(p);
+      switch(protocol(str)){
+      case OSC:
+	;
+	char * name = path_to_name(get_string(str,0));
+	if(strcmp(name, "quit")==0)
+	  quit = 1;
+	else
+	  execute(str_array_to_cmd(str), m);
+	free(name);
+	break;
+      
+      case minuit_query:
+      ;
+	Str_array answer = minuit_answer(get_device(m), str);
+	if(answer == NULL)
+	  break;
+	DATA d = write_minuit_packet(answer);
+	send_socket(s, d, "127.0.0.1", 13579);
+	free_str_array(answer);
+	free_data(d);
+	break;
+      case minuit_reply:
+	printf("Reply\n");
+	break;
+
+      case unknown_protocol:
+	printf("Unknown protocol\n");
+	break;
+      }
+      free_str_array(str);
+      free_data(p);
+    }
+  close_socket(s);
+  // Fermer la connection avec le Metabot
+  if(!DEBUG_MODE){
+    stop(m);
+  }
+
+  // Libérer la mémoire et quitter
+  // free a socket set
+  //SDLNet_SocketSet set;
+  
+  free_metabot(m);
 }

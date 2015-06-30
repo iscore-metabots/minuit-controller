@@ -1,9 +1,3 @@
-/*
- * UDPserver.c
- *
- *  Created on: 9 juin 2015
- *      Author: nicho
- */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -88,17 +82,19 @@ DATA receive_socket(SOCKET sock){
 }
 
 void send_socket(SOCKET sock, DATA d, char * ip, int port){
-  struct sockaddr_in * to = malloc(sizeof(struct sockaddr_in));
-  to->sin_addr.s_addr = inet_addr(ip);     // we specifed the address as a string, inet_addr translates to a number in the correct byte order
-  to->sin_family = AF_INET;                         // ipv4
-  to->sin_port = htons(port);                // set port address (is this the sender's port or the receiver's port
+  if(d != NULL){
+    struct sockaddr_in * to = malloc(sizeof(struct sockaddr_in));
+    to->sin_addr.s_addr = inet_addr(ip);     // we specifed the address as a string, inet_addr translates to a number in the correct byte order
+    to->sin_family = AF_INET;                         // ipv4
+    to->sin_port = htons(port);                // set port address (is this the sender's port or the receiver's port
 
-  if(sendto(sock, d->data, d->len, 0, (SOCKADDR *)to, sizeof(*to)) < 0)
-    {
-      perror("sendto()");
-      exit(errno);
-    }
-  free(to);
+    if(sendto(sock, d->data, d->len, 0, (SOCKADDR *)to, sizeof(*to)) < 0)
+      {
+	perror("sendto()");
+	exit(errno);
+      }
+    free(to);
+  }
 }
 
 void close_socket(SOCKET sock){

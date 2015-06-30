@@ -1,6 +1,8 @@
 /*
  * musicPlayer.c*/
 #include "minuit.h"
+#include "str_array.h"
+#include "device.h"
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
 
