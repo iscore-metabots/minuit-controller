@@ -1,0 +1,18 @@
+# In bluetoothctl
+
+agent KeyboardOnly
+default-agent
+scan on
+pair B8:63:BC:00:46:D6 # Ou autre mac
+PIN code : 1234
+trust B8:63:BC:00:46:D6
+
+
+# In shell
+sudo modprobe rfcomm
+sudo rfcomm bind rfcomm0 B8:63:BC:00:46:D6
+
+sudo minicom ... 
+start
+
+or linker
