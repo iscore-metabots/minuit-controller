@@ -2,6 +2,7 @@
 
 agent KeyboardOnly
 default-agent
+power on
 scan on
 pair B8:63:BC:00:46:D6 # Ou autre mac
 PIN code : 1234

@@ -1,21 +1,20 @@
 project(minuit_controller)
 
 find_package(SDL REQUIRED)
-find_package(SDL_mixer REQUIRED)
 
 set(CMAKE_C_FLAGS "-std=c99")
 include_directories(${SDL_INCLUDE_DIR})
-file(GLOB_RECURSE COMMON_SRCS
-		minuit.c  device.c UDPserver.c str_array.c)
-file(GLOB_RECURSE MAIN_SRCS
-		main.c metabot.c)
-file(GLOB_RECURSE MUSIC_SRCS
-		musicPlayer.c
-)
+set(COMMON_SRCS minuit.c  device.c UDPserver.c str_array.c)
 add_library(common OBJECT ${COMMON_SRCS})
+
+set(MAIN_SRCS main.c metabot.c)
 add_executable(linker ${MAIN_SRCS} $<TARGET_OBJECTS:common>)
 target_link_libraries(linker ${SDL_LIBRARY})
 
+find_package(SDL_mixer)
+if(SDL_mixer)
+set(MUSIC_SRCS musicPlayer.c)
 
 add_executable(music ${MUSIC_SRCS} $<TARGET_OBJECTS:common>)
 target_link_libraries(music ${SDL_LIBRARY} ${SDLMIXER_LIBRARY})
+endif()
