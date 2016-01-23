@@ -3,6 +3,7 @@ project(minuit_controller)
 find_package(SDL REQUIRED)
 find_package(SDL_mixer REQUIRED)
 
+set(CMAKE_C_FLAGS "-std=c99")
 include_directories(${SDL_INCLUDE_DIR})
 file(GLOB_RECURSE COMMON_SRCS
 		minuit.c  device.c UDPserver.c str_array.c)
